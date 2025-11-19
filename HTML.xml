@@ -1,732 +1,485 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Task Manager</title>
-    <style>
-        body {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 20px;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            min-height: 100%;
-            color: #2c3e50;
-            position: relative;
-            transition: all 0.3s ease;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Reunion Platform - Lost & Found Community</title> <script src="https://cdn.tailwindcss.com"></script>
 
-        html {
-            height: 100%;
-        }
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-        /* Dark mode styles */
-        body.dark-mode {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
-        }
+  <style>
+    :root{
+      /* New Colors: Bluish-Purple Blend */
+      --bg-0: #f7f3ff; /* Very Light Lavender */
+      --bg-1: #e9e0ff; /* Light Violet/Blue */
+      --bg-2: #c4b5fd; /* Mid Periwinkle/Purple */
+      --accent: #8b5cf6; /* Strong Purple Accent (Tailwind's Violet-500) */
+      --glass: rgba(255,255,255,0.78);
+      --glass-dark: rgba(12,18,28,0.44);
+      --muted: #64748b;
+      --blue-glow: rgba(139,92,246,0.40); /* Updated glow to match new accent */
+    }
+    *{box-sizing:border-box;font-family:"Nunito",sans-serif}
+    html,body{height:100%;margin:0;color:#0f172a;background:linear-gradient(180deg,var(--bg-0) 0%, var(--bg-1) 35%, var(--bg-2) 100%);}
 
-        body.dark-mode .container {
-            background: rgba(52, 73, 94, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+    /* Layered blended background + waves */
+    body::before{
+      content:"";
+      position:fixed; inset:0; z-index:0;
+      background:
+        radial-gradient(1200px 420px at 10% 8%, rgba(255,255,255,0.06), transparent 10%),
+        radial-gradient(900px 300px at 90% 12%, rgba(255,255,255,0.04), transparent 8%),
+        linear-gradient(180deg, rgba(250,253,255,0.6), rgba(225,242,254,0.35));
+      pointer-events:none;
+      backdrop-filter: blur(8px);
+    }
 
-        body.dark-mode .title,
-        body.dark-mode .stats,
-        body.dark-mode .todo-text {
-            color: #ecf0f1;
-        }
+    /* Noise overlay subtle */
+    .noise {
+      pointer-events:none;
+      position:fixed; inset:0; z-index:2; mix-blend-mode:overlay;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><filter id="t"><feTurbulence baseFrequency="0.9" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23t)" opacity="0.02"/></svg>');
+      opacity:0.9;
+    }
 
-        body.dark-mode .subtitle {
-            color: #bdc3c7;
-        }
+    /* Clouds container - SVGs absolute */
+    .clouds { position:fixed; inset:0; z-index:1; pointer-events:none;
+    }
 
-        body.dark-mode .task-input,
-        body.dark-mode .todo-item,
-        body.dark-mode .stats,
-        body.dark-mode .search-input,
-        body.dark-mode .filter-select,
-        body.dark-mode .category-select,
-        body.dark-mode .priority-select {
-            background: #34495e;
-            border-color: #4a5f7a;
-            color: #ecf0f1;
-        }
+    /* Glass cards */
+    .glass {
+      background:var(--glass);
+      backdrop-filter:blur(10px) saturate(120%);
+      border:1px solid rgba(105,142,162,0.08);
+      box-shadow:0 8px 30px rgba(2,6,23,0.08);
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+    .glass:hover{ transform: translateY(-6px); box-shadow:0 20px 40px rgba(2,6,23,0.12);
+    }
 
-        body.dark-mode .task-input:focus,
-        body.dark-mode .search-input:focus,
-        body.dark-mode .filter-select:focus,
-        body.dark-mode .category-select:focus,
-        body.dark-mode .priority-select:focus {
-            border-color: #667eea;
-        }
+    /* Title gentle float/bounce */
+    .title-breath { display:inline-block; animation:breath 4.2s ease-in-out infinite; transform-origin:center;
+    }
+    @keyframes breath{
+      0%,92%{ transform: translateY(0) scale(1);
+    }
+      96%{ transform: translateY(-6px) scale(1.004); }
+      100%{ transform: translateY(0) scale(1);
+    }
+    }
 
-        body.dark-mode .todo-item.completed {
-            background: #2c3e50;
-        }
+    /* floating subtle animation for clouds/objects */
+    .float-slow { animation: floatSlow 12s ease-in-out infinite;
+    }
+    @keyframes floatSlow { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-8px) } }
 
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: 2px solid #667eea;
-            border-radius: 25px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: #667eea;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
+    /* Blue hover glow used on interactive elements */
+    .blue-glow-hover:hover { box-shadow: 0 10px 36px var(--blue-glow);
+    transform: translateY(-4px); }
 
-        .theme-toggle:hover {
-            background: #667eea;
-            color: white;
-        }
+    /* Sparkles */
+    .sparkle { position:absolute; width:5px; height:5px; border-radius:999px; background:linear-gradient(180deg,#fff,#fff);
+    box-shadow:0 0 10px rgba(255,255,255,0.95); }
 
-        body.dark-mode .theme-toggle {
-            border-color: #ecf0f1;
-            color: #ecf0f1;
-        }
+    /* Modals */
+    .modal { display:none; position:fixed; inset:0;
+    background: rgba(2,6,23,0.45); z-index:90; align-items:center; justify-content:center; padding:20px; }
+    .modal.active { display:flex;
+    }
 
-        body.dark-mode .theme-toggle:hover {
-            background: #ecf0f1;
-            color: #2c3e50;
-        }
+    /* Swipe & cards */
+    .card { border-radius:12px; background:white;
+    box-shadow: 0 12px 36px rgba(2,6,23,0.12); overflow:hidden; }
 
-        /* Subtle geometric background */
-        .background-pattern {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.1;
-        }
+    /* skeleton loader */
+    .skeleton { background: linear-gradient(90deg,#f3f4f6 25%, #e6eef8 50%, #f3f4f6 75%);
+    background-size:200% 100%; animation: load 1.4s linear infinite; }
+    @keyframes load{ to { background-position: -200% 0 } }
 
-        .geometric-shape {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            animation: gentleFloat 8s ease-in-out infinite;
-        }
+    /* inputs straight & consistent */
+    input[type="text"], input[type="email"], textarea, input[type="file"]{
+      transform:none !important;
+    border-radius:10px;
+      padding:10px 12px;
+      border:1px solid #e6eef8;
+      background: rgba(255,255,255,0.9);
+      width:100%;
+      box-shadow:none;
+    }
+    textarea{ resize:vertical; min-height:100px;
+    }
 
-        .shape1 { width: 100px; height: 100px; top: 10%; left: 10%; animation-delay: 0s; }
-        .shape2 { width: 60px; height: 60px; top: 30%; right: 15%; animation-delay: 2s; }
-        .shape3 { width: 80px; height: 80px; bottom: 20%; left: 20%; animation-delay: 4s; }
-        .shape4 { width: 40px; height: 40px; top: 60%; right: 30%; animation-delay: 6s; }
+    /* star btn */
+    .star-btn { cursor:pointer; transition: transform .12s ease;
+    }
+    .star-btn:hover { transform: scale(1.18); }
 
-        @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0px); opacity: 0.1; }
-            50% { transform: translateY(-15px); opacity: 0.2; }
-        }
+    /* profile dropdown */
+    .profile-menu { display:none;
+    position:absolute; right:0; top:40px; min-width:180px; background:var(--glass); border-radius:12px; padding:8px; box-shadow:0 8px 26px rgba(2,6,23,0.12); }
+    .profile-wrap:hover .profile-menu { display:block;
+    }
 
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(20px);
-            position: relative;
-            z-index: 2;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+    /* success carousel */
+    .carousel { display:flex; gap:12px; overflow:hidden; align-items:center;
+    }
+    .carousel-track { display:flex; gap:12px; transition:transform .45s cubic-bezier(.2,.8,.2,1); }
+    .carousel-item { min-width:260px;
+    flex:0 0 auto; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+    /* dark mode */
+    .dark { --glass: rgba(10,14,22,0.6); --glass-dark: rgba(255,255,255,0.04);
+    background: linear-gradient(180deg,#071027 0%, #0b2540 50%, #09304b 100%); color:#e6eef8; }
+    .dark .glass{ background: var(--glass); border:1px solid rgba(255,255,255,0.06);
+    box-shadow: none; color: #e6eef8; }
+    .dark input, .dark textarea { background: rgba(255,255,255,0.03); color:#e6eef8; border:1px solid rgba(255,255,255,0.06);
+    }
 
-        .title {
-            font-size: 2.5rem;
-            color: #2c3e50;
-            margin: 0;
-            font-weight: 700;
-            letter-spacing: -1px;
-            position: relative;
-        }
-
-        .subtitle {
-            font-size: 1.1rem;
-            color: #7f8c8d;
-            margin: 12px 0 0 0;
-            font-weight: 400;
-        }
-
-        .input-section {
-            margin-bottom: 35px;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .task-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 16px 20px;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.2s ease;
-            background: white;
-        }
-
-        .task-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .category-select,
-        .priority-select {
-            padding: 16px 20px;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.2s ease;
-            background: white;
-            cursor: pointer;
-            min-width: 120px;
-        }
-
-        .category-select:focus,
-        .priority-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .add-btn {
-            padding: 16px 28px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .add-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-        }
-
-        .controls-section {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .search-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 12px 16px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.2s ease;
-            background: white;
-        }
-
-        .search-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .filter-select {
-            padding: 12px 16px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.2s ease;
-            background: white;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: white;
-            border-radius: 16px;
-            font-weight: 600;
-            color: #2c3e50;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid #f1f3f4;
-        }
-
-        .todo-list {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .todo-item {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 18px 20px;
-            margin-bottom: 12px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            transition: all 0.2s ease;
-            border: 1px solid #f1f3f4;
-            position: relative;
-        }
-
-        .todo-item:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-color: #e9ecef;
-        }
-
-        .todo-item.completed {
-            opacity: 0.6;
-            background: #f8f9fa;
-        }
-
-        .priority-indicator {
-            width: 4px;
-            height: 100%;
-            position: absolute;
-            left: 0;
-            top: 0;
-            border-radius: 12px 0 0 12px;
-        }
-
-        .priority-high { background: #e74c3c; }
-        .priority-medium { background: #f39c12; }
-        .priority-low { background: #27ae60; }
-
-        .category-tag {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: white;
-            margin-right: 8px;
-        }
-
-        .category-work { background: #3498db; }
-        .category-personal { background: #9b59b6; }
-        .category-health { background: #e74c3c; }
-        .category-learning { background: #f39c12; }
-        .category-other { background: #95a5a6; }
-
-        .todo-checkbox {
-            width: 20px;
-            height: 20px;
-            border-radius: 6px;
-            border: 2px solid #cbd5e0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .todo-checkbox.checked {
-            background: #667eea;
-            border-color: #667eea;
-        }
-
-        .todo-checkbox.checked::after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .todo-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .todo-text {
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .todo-text.completed {
-            text-decoration: line-through;
-            color: #999;
-        }
-
-        .todo-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .delete-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .delete-btn:hover {
-            background: #c0392b;
-            transform: scale(1.05);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-            font-size: 1.2rem;
-        }
-
-        .empty-emoji {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .clear-all-btn {
-            width: 100%;
-            padding: 16px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 24px;
-            transition: all 0.2s ease;
-        }
-
-        .clear-all-btn:hover {
-            background: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-                padding: 25px;
-            }
-            
-            .input-row,
-            .controls-section {
-                flex-direction: column;
-            }
-            
-            .stats {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-
-            .todo-meta {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
+    /* small responsive */
+    @media (min-width:1024px){ .min-w-72{ min-width:340px } }
+  </style>
 </head>
-<body>
-    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+<body id="pageBody">
 
-    <!-- Subtle geometric background -->
-    <div class="background-pattern">
-        <div class="geometric-shape shape1"></div>
-        <div class="geometric-shape shape2"></div>
-        <div class="geometric-shape shape3"></div>
-        <div class="geometric-shape shape4"></div>
-    </div>
+  <div class="noise" aria-hidden="true"></div>
 
-    <div class="container">
-        <div class="header">
-            <h1 class="title">Advanced Task Manager</h1>
-            <p class="subtitle">Stay organized with categories, priorities, and smart filtering</p>
-        </div>
+  <div class="clouds" aria-hidden="true">
+    <svg class="float-slow" style="position:absolute; left:6%; top:6%; opacity:0.14; width:220px; height:92px;"
+    viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#ffffff"><ellipse cx="40" cy="30" rx="40" ry="22"/><ellipse cx="90" cy="20" rx="30" ry="18"/><ellipse cx="130" cy="32" rx="38" ry="22"/></g>
+    </svg>
+    <svg class="float-slow" style="position:absolute; right:6%; top:12%; opacity:0.18; width:320px; height:120px; animation-delay:0.6s;"
+    viewBox="0 0 300 120"><g fill="#ffffff"><ellipse cx="50" cy="40" rx="50" ry="26"/><ellipse cx="120" cy="26" rx="42" ry="22"/><ellipse cx="190" cy="48" rx="58" ry="26"/></g></svg>
+    <svg class="float-slow" style="position:absolute; left:50%; top:2%; transform:translateX(-50%); opacity:0.12; width:720px; height:220px; animation-duration:14s;"
+    viewBox="0 0 800 240"><g fill="#ffffff"><ellipse cx="160" cy="80" rx="150" ry="48"/><ellipse cx="360" cy="56" rx="120" ry="44"/><ellipse cx="580" cy="86" rx="180" ry="56"/></g></svg>
 
-        <div class="input-section">
-            <div class="input-row">
-                <input type="text" class="task-input" placeholder="Add a new task..." id="taskInput">
-                <select class="category-select" id="categorySelect">
-                    <option value="work">Work</option>
-                    <option value="personal">Personal</option>
-                    <option value="health">Health</option>
-                    <option value="learning">Learning</option>
-                    <option value="other">Other</option>
-                </select>
-                <select class="priority-select" id="prioritySelect">
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="low">Low</option>
-                </select>
-            </div>
-            <button class="add-btn" onclick="addTask()">Add Task</button>
-        </div>
+    <svg style="position:absolute; left:6%; bottom:10%; opacity:0.92; width:220px; height:220px;"
+    viewBox="0 0 200 200">
+      <g transform="translate(12,20)"><circle cx="28" cy="18" r="14" fill="#ffd8d2"/><rect x="10" y="36" rx="10" width="36" height="48" fill="#9ad8ff"/><path d="M2 84 q16 10 36 10 q20 0 36 -10" fill="#77c3ff"/></g>
+    </svg>
+    <svg style="position:absolute; right:8%; bottom:8%; opacity:0.92; width:220px; height:220px;"
+    viewBox="0 0 200 200">
+      <g transform="translate(16,10)"><circle cx="28" cy="20" r="14" fill="#fff0d6"/><rect x="10" y="40" rx="10" width="36" height="48" fill="#bde9d8"/><path d="M2 88 q16 10 36 10 q20 0 36 -10" fill="#9be6c4"/></g>
+    </svg>
+  </div>
 
-        <div class="controls-section">
-            <input type="text" class="search-input" placeholder="Search tasks..." id="searchInput">
-            <select class="filter-select" id="filterSelect">
-                <option value="all">All Tasks</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="work">Work</option>
-                <option value="personal">Personal</option>
-                <option value="health">Health</option>
-                <option value="learning">Learning</option>
-                <option value="other">Other</option>
-                <option value="high">High Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="low">Low Priority</option>
-            </select>
-        </div>
+  <header class="relative z-30 py-6 px-6">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">
+          <span class="title-breath">The Reunion Platform</span>
+        </h1>
+   
+        <div class="text-sm text-muted" style="margin-top:4px;color:var(--muted)">Uniting items, restoring smiles.</div>
+      </div>
 
-        <div class="stats">
-            <span>Total: <span id="totalTasks">0</span></span>
-            <span>Completed: <span id="completedTasks">0</span></span>
-            <span>Remaining: <span id="remainingTasks">0</span></span>
-        </div>
-
-        <div class="todo-list" id="todoList">
-            <div class="empty-state">
-                <span class="empty-emoji">📋</span>
-                No tasks yet. Add one above to get started.
-            </div>
-        </div>
-
-        <button class="clear-all-btn" onclick="clearAllTasks()" id="clearAllBtn" style="display: none;">
-            Clear All Tasks
+      <div class="flex items-center gap-3">
+        <button id="themeToggle" class="rounded-full p-2 hover:scale-105" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <svg id="themeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 
+ 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
         </button>
+
+        <button onclick="openModal('updatesModal')" class="px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white">Updates</button>
+
+        <div class="relative profile-wrap">
+          <button class="flex items-center gap-2 px-3 py-2 rounded-full bg-white/80 glass blue-glow-hover" style="border:1px solid rgba(0,0,0,0.04)">
+      
+          <div style="width:30px;height:30px;border-radius:999px;background:#e6f6ff;display:flex;align-items:center;justify-content:center">N</div>
+          </button>
+          <div class="profile-menu">
+            <div class="text-sm p-2">Signed out</div>
+            <button class="w-full text-left p-2 rounded hover:bg-white/6">Sign in</button>
+            <button class="w-full text-left p-2 rounded hover:bg-white/6">Sign up</button>
+            <hr />
+        
+          <button class="w-full text-left p-2 rounded hover:bg-white/6">Settings</button>
+          </div>
+        </div>
+      </div>
     </div>
+  </header>
 
-    <script>
-        let tasks = JSON.parse(localStorage.getItem('advancedTaskManagerTasks')) || [];
-        let taskIdCounter = parseInt(localStorage.getItem('taskIdCounter')) || 1;
-        let currentFilter = 'all';
-        let searchQuery = '';
+  <main class="max-w-7xl mx-auto px-6 py-10 relative z-20">
+    <section class="text-center mb-12">
+      <h2 class="text-4xl lg:text-5xl font-bold mb-6">Find What's Lost.<br><span class="text-blue-600">Return What's Found.</span></h2>
 
-        function saveTasks() {
-            localStorage.setItem('advancedTaskManagerTasks', JSON.stringify(tasks));
-            localStorage.setItem('taskIdCounter', taskIdCounter.toString());
-        }
+      <div style="position:relative;height:0;">
+        <div class="sparkle" style="left:50%;
+ top:-18px;"></div>
+        <div class="sparkle" style="left:46%; top:-4px; width:4px; height:4px;
+ opacity:0.9;"></div>
+      </div>
 
-        function toggleTheme() {
-            const body = document.body;
-            const themeToggle = document.querySelector('.theme-toggle');
-            
-            body.classList.toggle('dark-mode');
-            
-            if (body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '☀️ Light';
-                localStorage.setItem('theme', 'dark');
-            } else {
-                themeToggle.textContent = '🌙 Dark';
-                localStorage.setItem('theme', 'light');
-            }
-        }
+      <div class="flex flex-col md:flex-row gap-6 justify-center items-center mt-6">
+        <button onclick="openModal('lostModal')" class="glass p-6 rounded-3xl min-w-72 blue-glow-hover">
+          <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow">🔎</div>
+          <h3 class="text-xl font-semibold">I Lost Something</h3>
+          <p class="text-sm text-slate-600 mt-2">Report your lost item</p>
+    
+          </button>
 
-        function addTask() {
-            const input = document.getElementById('taskInput');
-            const categorySelect = document.getElementById('categorySelect');
-            const prioritySelect = document.getElementById('prioritySelect');
-            const taskText = input.value.trim();
-            
-            if (taskText === '') {
-                input.style.borderColor = '#e74c3c';
-                setTimeout(() => {
-                    input.style.borderColor = '#e9ecef';
-                }, 1000);
-                return;
-            }
+        <button onclick="openModal('foundModal')" class="glass p-6 rounded-3xl min-w-72 blue-glow-hover" id="foundBtn">
+          <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white shadow">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+     
+             <path d="M6 7a6 6 0 0112 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="3" y="7.5" width="18" height="12" rx="2.2" fill="#fff" opacity="0.06"></rect>
+              <path d="M4 10.5h16" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M8 10.5v-1a4 4 0 018 0v1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 15h0" 
+              stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold">I Found Something</h3>
+          <p class="text-sm text-slate-600 mt-2">Help return someone's lost item</p>
+        </button>
+      </div>
+    </section>
 
-            const newTask = {
-                id: taskIdCounter++,
-                text: taskText,
-                completed: false,
-                category: categorySelect.value,
-                priority: prioritySelect.value,
-                createdAt: new Date().toISOString()
-            };
+    <section class="mb-8">
+      <div class="glass p-6 rounded-3xl">
+      
+          <h3 class="text-2xl font-bold mb-2 text-center">About The Reunion Platform</h3>
+        <p class="text-slate-600 text-center max-w-3xl mx-auto">At The Reunion Platform, we believe no valuable memory or belonging should stay lost.
+         We are a team building a community-driven platform where technology bridges the gap, making the lost meet the found.</p>
+      </div>
+    </section>
 
-            tasks.unshift(newTask);
-            input.value = '';
-            
-            saveTasks();
-            renderTasks();
-            updateStats();
-        }
+    <section class="mb-8">
+      <div class="glass p-6 rounded-3xl">
+        <h3 class="text-xl font-bold mb-4 text-center">How It Works</h3>
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="text-center p-4 rounded-2xl bg-white/60"> <div class="mb-2">📝</div><h4 class="font-semibold">Report</h4><p class="text-sm text-slate-600">Report lost or found items.</p></div>
+ 
+          <div class="text-center p-4 rounded-2xl bg-white/60"> <div class="mb-2">🔍</div><h4 class="font-semibold">Match</h4><p class="text-sm text-slate-600">We connect lost items with owners.</p></div>
+          <div class="text-center p-4 rounded-2xl bg-white/60"> <div class="mb-2">🤝</div><h4 class="font-semibold">Retrieve</h4><p class="text-sm text-slate-600">Coordinate safe pick-up.</p></div>
+          <div class="text-center p-4 rounded-2xl bg-white/60"> <div class="mb-2">⭐</div><h4 class="font-semibold">Feedback</h4><p class="text-sm text-slate-600">Share your experience.</p></div>
+        </div>
+      </div>
+    </section>
 
-        function toggleTask(taskId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.completed = !task.completed;
-                saveTasks();
-                renderTasks();
-                updateStats();
-            }
-        }
+    <section class="mb-8">
+      
+      <h3 class="text-xl font-bold text-center mb-4">Industries We Serve</h3>
+      <div class="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="glass p-4 rounded-2xl text-center">🏫<h4 class="mt-2 font-semibold">Schools</h4></div>
+        <div class="glass p-4 rounded-2xl text-center">🎓<h4 class="mt-2 font-semibold">Campuses</h4></div>
+        <div class="glass p-4 rounded-2xl text-center">🏨<h4 class="mt-2 font-semibold">Hotels</h4></div>
+        <div class="glass p-4 rounded-2xl text-center">🌳<h4 class="mt-2 font-semibold">Parks</h4></div>
+        <div class="glass p-4 rounded-2xl text-center">✈️<h4 class="mt-2 font-semibold">Airports</h4></div>
+      </div>
+    </section>
 
-        function deleteTask(taskId) {
-            tasks = tasks.filter(t => t.id !== taskId);
-            saveTasks();
-            renderTasks();
-            updateStats();
-        }
+    
+    <section class="mb-8">
+      <h3 class="text-xl font-bold text-center mb-3">Recently Found Items</h3>
+      <div id="recentFound" class="glass p-6 rounded-3xl text-center">
+        <p class="text-slate-600">No items found yet — items will appear here once reported and verified.</p>
+      </div>
+    </section>
 
-        function clearAllTasks() {
-            tasks = [];
-            saveTasks();
-            renderTasks();
-            updateStats();
-        }
+    <section class="mb-8">
+      <h3 class="text-xl font-bold text-center mb-3">Success Stories</h3>
+      <div class="glass p-4 rounded-3xl">
+     
+          <div class="flex items-center justify-between mb-3">
+          <button onclick="carouselPrev()" class="px-3 py-2 rounded bg-gray-100">‹</button>
+          <div style="overflow:hidden" class="flex-1 mx-4">
+            <div id="carouselTrack" class="carousel-track" style="display:flex;gap:12px;">
+              </div>
+          </div>
+         
+          <button onclick="carouselNext()" class="px-3 py-2 rounded bg-gray-100">›</button>
+        </div>
+      </div>
+    </section>
 
-        function filterTasks() {
-            return tasks.filter(task => {
-                // Search filter
-                const matchesSearch = task.text.toLowerCase().includes(searchQuery.toLowerCase());
-                
-                // Category/Status filter
-                let matchesFilter = true;
-                switch(currentFilter) {
-                    case 'active':
-                        matchesFilter = !task.completed;
-                        break;
-                    case 'completed':
-                        matchesFilter = task.completed;
-                        break;
-                    case 'work':
-                    case 'personal':
-                    case 'health':
-                    case 'learning':
-                    case 'other':
-                        matchesFilter = task.category === currentFilter;
-                        break;
-                    case 'high':
-                    case 'medium':
-                    case 'low':
-                        matchesFilter = task.priority === currentFilter;
-                        break;
-                    default:
-                        matchesFilter = true;
-                }
-                
-                return matchesSearch && matchesFilter;
-            });
-        }
+    <section class="mb-16">
+      <h3 class="text-xl font-bold text-center mb-3">Share Your Experience</h3>
+      <div class="max-w-2xl mx-auto">
+        <div class="glass p-6 rounded-3xl">
+          <form id="reviewForm" onsubmit="submitReview(event)" class="space-y-4">
+            <div><label class="text-sm font-semibold">Your Name</label><input id="reviewName" required 
+ type="text" placeholder="Your name"></div>
 
-        function renderTasks() {
-            const todoList = document.getElementById('todoList');
-            const clearAllBtn = document.getElementById('clearAllBtn');
-            const filteredTasks = filterTasks();
-            
-            if (filteredTasks.length === 0) {
-                const emptyMessage = tasks.length === 0 
-                    ? "No tasks yet. Add one above to get started."
-                    : "No tasks match your current filter.";
-                    
-                todoList.innerHTML = `
-                    <div class="empty-state">
-                        <span class="empty-emoji">📋</span>
-                        ${emptyMessage}
-                    </div>
-                `;
-                clearAllBtn.style.display = tasks.length > 0 ? 'block' : 'none';
-                return;
-            }
+            <div>
+              <label class="text-sm font-semibold">Rate your experience</label>
+              <div id="starContainer" class="flex gap-2 mt-2" role="radiogroup" aria-label="Star rating">
+                <button type="button" class="star-btn text-3xl text-slate-300" data-value="1" aria-label="1 star">★</button>
+                <button type="button" class="star-btn text-3xl text-slate-300" data-value="2" aria-label="2 stars">★</button>
+ 
+                <button type="button" class="star-btn text-3xl text-slate-300" data-value="3" aria-label="3 stars">★</button>
+                <button type="button" class="star-btn text-3xl text-slate-300" data-value="4" aria-label="4 stars">★</button>
+                <button type="button" class="star-btn text-3xl text-slate-300" data-value="5" aria-label="5 stars">★</button>
+              </div>
+            </div>
 
-            clearAllBtn.style.display = 'block';
-            
-            todoList.innerHTML = filteredTasks.map(task => `
-                <div class="todo-item ${task.completed ? 'completed' : ''}">
-                    <div class="priority-indicator priority-${task.priority}"></div>
-                    <div class="todo-checkbox ${task.completed ? 'checked' : ''}" 
-                         onclick="toggleTask(${task.id})"></div>
-                    <div class="todo-content">
-                        <span class="todo-text ${task.completed ? 'completed' : ''}">${task.text}</span>
-                        <div class="todo-meta">
-                            <span class="category-tag category-${task.category}">${task.category}</span>
-                            <span style="font-size: 0.8rem; color: #999;">${task.priority} priority</span>
-                        </div>
-                    </div>
-                    <button class="delete-btn" onclick="deleteTask(${task.id})">×</button>
-                </div>
-            `).join('');
-        }
+      
+           <div><label class="text-sm font-semibold">Tell us about your experience</label><textarea id="reviewText" required placeholder="Share your story..."></textarea></div>
 
-        function updateStats() {
-            const total = tasks.length;
-            const completed = tasks.filter(t => t.completed).length;
-            const remaining = total - completed;
+            <div class="flex gap-2">
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Share My Review</button>
+              <div id="reviewStatus" class="text-sm text-slate-600 self-center"></div>
+            </div>
+          </form>
+       
+        </div>
+      </div>
+    </section>
 
-            document.getElementById('totalTasks').textContent = total;
-            document.getElementById('completedTasks').textContent = completed;
-            document.getElementById('remainingTasks').textContent = remaining;
-        }
+  </main>
 
-        // Event listeners
-        document.getElementById('taskInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addTask();
-            }
-        });
+  <div id="updatesModal" class="modal" aria-hidden="true">
+    <div class="glass p-4 rounded-3xl max-w-2xl w-full">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-semibold">Recent Updates</h3>
+        <button onclick="closeModal('updatesModal')">✕</button>
+      </div>
+      <div id="updatesList"> <p class="text-slate-600">No recent updates.</p> </div>
+    </div>
+  </div>
 
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            searchQuery = e.target.value;
-            renderTasks();
-        });
+  <div id="lostModal" class="modal" aria-hidden="true">
+    <div class="glass p-4 rounded-3xl max-w-md w-full">
+      <div class="flex justify-between items-center mb-2"><h3 class="font-semibold text-red-600">Report Lost Item</h3><button onclick="closeModal('lostModal')">✕</button></div>
+      <form onsubmit="submitLostForm(event)" id="lostForm" class="space-y-3">
+        <div><label class="text-sm">Item Name</label><input required id="lostName" type="text" placeholder="e.g., Blue backpack"></div>
+        <div><label class="text-sm">Where did you lose it?</label><input required id="lostLocation" type="text" placeholder="Location"></div>
+        <div><label class="text-sm">Description</label><textarea required id="lostDesc" placeholder="Describe your item"></textarea></div>
+        <div><label class="text-sm">Contact</label><input required id="lostContact" type="email" placeholder="your.email@example.com"></div>
+  
+           <div class="flex gap-2"><button type="button" onclick="closeModal('lostModal')" class="px-3 py-2 rounded border">Cancel</button><button type="submit" class="px-3 py-2 rounded bg-red-500 text-white">Report</button></div>
+      </form>
+    </div>
+  </div>
 
-        document.getElementById('filterSelect').addEventListener('change', function(e) {
-            currentFilter = e.target.value;
-            renderTasks();
-        });
+  <div id="foundModal" class="modal" aria-hidden="true">
+    <div class="glass p-4 rounded-3xl max-w-md w-full">
+      <div class="flex justify-between items-center mb-2"><h3 class="font-semibold text-green-600">Report Found Item</h3><button onclick="closeModal('foundModal')">✕</button></div>
+      <form id="foundForm" onsubmit="submitFoundForm(event)" class="space-y-3">
+        <div><label class="text-sm">Item Name</label><input required id="foundName" type="text" placeholder="e.g., Red wallet"></div>
+     
+        <div><label class="text-sm">Where found</label><input required id="foundLocation" type="text" placeholder="Location"></div>
+        <div><label class="text-sm">Description</label><textarea required id="foundDesc" placeholder="Describe the item"></textarea></div>
+        <div>
+          <label class="text-sm">Upload photo of the item (required)</label>
+          <input id="foundImageInput" type="file" accept="image/*" required>
+          <div id="foundImagePreview" style="margin-top:8px;
+ display:none;">
+            <img id="foundImgTag" src="" alt="preview" style="max-width:100%; border-radius:8px;
+ box-shadow:0 8px 24px rgba(2,6,23,0.06)">
+          </div>
+        </div>
+        <div><label class="text-sm">Contact</label><input required id="foundContact" type="email" placeholder="your.email@example.com"></div>
+        <div class="flex gap-2"><button type="button" onclick="closeModal('foundModal')" class="px-3 py-2 rounded border">Cancel</button><button type="submit" class="px-3 py-2 rounded bg-green-500 text-white">Report Found</button></div>
+      </form>
+    </div>
+  </div>
 
-        // Initialize theme
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.querySelector('.theme-toggle').textContent = '☀️ Light';
-        }
+  <div id="swipeModal" class="modal" aria-hidden="true">
+    <div class="p-4 rounded-3xl max-w-2xl w-full glass">
+      <div class="flex justify-between items-center mb-3"><h3 class="font-semibold">Found 
+ Items</h3><button onclick="closeSwipe()">✕</button></div>
+      <div id="cardStack" class="min-h-[220px] mb-4"></div>
+      <div id="noItemsPlaceholder" style="display:none" class="text-center text-slate-600"><p>No items available right now</p></div>
+      <div class="flex gap-3 justify-center"><button id="undoBtn" disabled onclick="undoSwipe()" class="px-3 py-2 rounded bg-gray-100">↺ Undo</button><button onclick="swipeLeft()" class="px-3 py-2 rounded bg-red-500 text-white">✕ Reject</button><button onclick="swipeRight()" class="px-3 py-2 rounded bg-green-600 text-white">♥ Accept</button></div>
+    </div>
+  </div>
 
-        // Initialize the app
-        renderTasks();
-        updateStats();
-    </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98f1c3fbd1df4425',t:'MTc2MDU1Njk4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+  <div id="matchModal" class="modal" aria-hidden="true">
+    <div class="glass p-4 rounded-3xl max-w-lg w-full text-center">
+      <h3 class="text-xl font-bold mb-2">It's a Match!
+ 🎉</h3>
+      <p id="matchInfo" class="text-slate-600 mb-3">You can now chat with the finder.</p>
+      <div class="flex gap-3 justify-center"><button onclick="openMatchChat()" class="px-3 py-2 rounded bg-blue-600 text-white">Start Chat</button><button onclick="closeModal('matchModal')" class="px-3 py-2 rounded border">Later</button></div>
+    </div>
+  </div>
+
+  <div id="matchChat" class="modal" aria-hidden="true" style="align-items:flex-end;padding:0;">
+    <div class="bg-white w-full max-w-2xl rounded-t-3xl">
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <div class="flex items-center gap-3">
+          <div style="width:40px;height:40px;border-radius:999px;background:#eef6ff;display:flex;align-items:center;justify-content:center">👤</div>
+     
+         <div><div id="chatHeaderTitle" class="font-semibold">Finder</div><div id="chatHeaderSubtitle" class="text-xs text-slate-500">Matched item</div></div>
+        </div>
+        <div><button onclick="closeMatchChat()">✕</button></div>
+      </div>
+      <div id="chatMessages" class="p-3 max-h-[48vh] overflow-y-auto bg-white">
+        <div id="chatEmptyPlaceholder" class="text-center text-slate-500"><p>No messages yet.
+ Start the conversation.</p></div>
+      </div>
+      <div class="p-3 border-t bg-white flex gap-2">
+        <input id="matchChatInput" class="flex-1 p-2 border rounded" placeholder="Type a message...">
+        <button onclick="sendMatchChat()" class="px-3 py-2 bg-blue-600 text-white rounded">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reportModal" class="modal" aria-hidden="true">
+    <div class="report-content p-4 rounded-2xl max-w-md glass">
+      <h4 class="font-semibold mb-2">Report Issue</h4>
+      <div class="space-y-2">
+  
+           <button class="w-full p-2 rounded text-left">Item details don't match</button>
+        <button class="w-full p-2 rounded text-left">Suspicious behaviour</button>
+      </div>
+      <div class="flex gap-2 justify-end mt-3"><button onclick="hideReportModal()" class="px-3 py-2 rounded border">Cancel</button><button onclick="submitReport()" class="px-3 py-2 rounded bg-red-500 text-white">Submit</button></div>
+    </div>
+  </div>
+
+  <div id="tutorialOverlay" class="modal" aria-hidden="true">
+    <div class="p-4 rounded-2xl max-w-md text-center">
+      <h3 class="text-xl font-bold mb-2">Welcome to The Reunion Platform!</h3>
+      <p class="mb-3">Swipe left to skip, right to claim.
+ Use the Found button to report an item you found (photo required).</p>
+      <button id="gotItBtn" class="px-3 py-2 rounded bg-blue-600 text-white">Got it</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Utility modals ----------
+    function openModal(id){ const el = document.getElementById(id);
+ if(!el) return; el.classList.add('active'); el.setAttribute('aria-hidden','false'); }
+    function closeModal(id){ const el = document.getElementById(id); if(!el) return; el.classList.remove('active'); el.setAttribute('aria-hidden','true');
+ }
+
+    // ---------- Theme toggle (dark mode) ----------
+    const body = document.getElementById('pageBody');
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    function setDarkMode(on){
+      if(on){
+        document.documentElement.classList.add('dark');
+        body.classList.add('dark');
+        themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#e6eef8" stroke="none"></path>';
+ } else {
+        document.documentElement.classList.remove('dark'); body.classList.remove('dark');
+        themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+ }
+      localStorage.setItem('darkMode', on ? '1' : '0');
+ }
+
+    themeToggle.addEventListener('click', ()=> {
+      setDarkMode(!body.classList.contains('dark'));
+    });
+    // initialize based on system or saved preference
+    (function(){
+      const saved = localStorage.getItem('darkMode');
+      if(saved === '1') setDarkMode(true);
+      else if(saved === '0') setDarkMode(false);
+      else {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setDarkMode(prefersDark);
+      }
+    })();
+    // ---------- Forms: Lost / Found (found includes image preview) ----------
+    function submitLostForm(e){ e.preventDefault(); alert('Lost item submitted.');
+ closeModal('lostModal'); }
+    function submitFoundForm(e){
+      e.preventDefault();
+ // gather details + image file (front-end ready to post)
+      const name = document.getElementById
